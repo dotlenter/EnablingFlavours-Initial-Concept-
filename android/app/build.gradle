@@ -1,0 +1,153 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+android.buildTypes.debug.signingConfig = null
+android.buildTypes.release.signingConfig = null
+
+android {
+    compileSdkVersion flutter.compileSdkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    lintOptions {
+        disable 'InvalidPackage'
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    defaultConfig {
+        applicationId "ph.enzolicious.gaano_katagal"
+        minSdkVersion 21
+        targetSdkVersion 31
+        multiDexEnabled true
+        resConfigs "en", "US"
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        googleplayRelease {
+            storeFile file(RELEASE_STORE_FILE)
+            storePassword RELEASE_STORE_PASSWORD
+            keyAlias RELEASE_KEY_ALIAS
+            keyPassword RELEASE_KEY_PASSWORD
+        }
+
+        huaweiDebug {
+            storeFile file(HUAWEI_DEBUG_KEYSTORE_FILE)
+            storePassword HUAWEI_DEBUG_KEYSTORE_PASSWORD
+            keyAlias HUAWEI_DEBUG_KEYSTORE_KEY_ALIAS
+            keyPassword HUAWEI_DEBUG_KEYSTORE_KEY_PASSWORD
+        }
+
+        huaweiRelease {
+            storeFile file(HUAWEI_RELEASE_KEYSTORE_FILE)
+            storePassword HUAWEI_RELEASE_KEYSTORE_PASSWORD
+            keyAlias HUAWEI_RELEASE_KEYSTORE_KEY_ALIAS
+            keyPassword HUAWEI_RELEASE_KEYSTORE_KEY_PASSWORD
+        }
+    }
+
+    flavorDimensions "default"
+
+    productFlavors {
+        // Google Play Signing Configs
+        def googleplayDebugSigningConfig = signingConfigs.debug // This `signingConfig` is from Flutter by default.
+        def googleplayReleaseSigningConfig = signingConfigs.googleplayRelease
+
+        // Google Play Flavors
+        dev {
+            dimension "default"
+            applicationId "ph.enzolicious.gaano_katagal.android.dev"
+            manifestPlaceholders = [huaweiCpId: '', huaweiAppId: '']
+            signingConfig googleplayDebugSigningConfig // Added so previous build configurations will still work.
+        }
+
+        staging {
+            dimension "default"
+            applicationId "ph.enzolicious.gaano_katagal.android"
+            manifestPlaceholders = [huaweiCpId: '', huaweiAppId: '']
+            signingConfig googleplayReleaseSigningConfig // Added so previous build configurations will still work.
+        }
+
+        prod {
+            dimension "default"
+            applicationId "pph.enzolicious.gaano_katagal.android"
+            manifestPlaceholders = [huaweiCpId: '', huaweiAppId: '']
+            signingConfig googleplayReleaseSigningConfig // Added so previous build configurations will still work.
+        }
+
+        // Huawei Signing Configs
+        def huaweiDebugSigningConfig = signingConfigs.huaweiDebug
+        def huaweiReleaseSigningConfig = signingConfigs.huaweiRelease
+
+        // Huawei Flavors
+        huaweiDev {
+            dimension "default"
+            applicationIdSuffix ".dev.huawei"
+            manifestPlaceholders = [googleMapsKey: '', huaweiCpId: HUAWEI_CP_ID, huaweiAppId: HUAWEI_DEV_APP_ID]
+            signingConfig huaweiDebugSigningConfig
+            proguardFiles getDefaultProguardFile('proguard-android.txt')
+        }
+
+        huaweiStaging {
+            dimension "default"
+            applicationIdSuffix ".huawei"
+            manifestPlaceholders = [googleMapsKey: '', huaweiCpId: HUAWEI_CP_ID, huaweiAppId: HUAWEI_STAGING_APP_ID]
+            signingConfig huaweiReleaseSigningConfig
+            proguardFiles getDefaultProguardFile('proguard-android.txt')
+        }
+
+        huaweiProd {
+            dimension "default"
+            applicationId "ph.enzolicious.gaano_katagal.android.huawei"
+            manifestPlaceholders = [googleMapsKey: '', huaweiCpId: HUAWEI_CP_ID, huaweiAppId: HUAWEI_PROD_APP_ID]
+            signingConfig huaweiReleaseSigningConfig
+            proguardFiles getDefaultProguardFile('proguard-android.txt')
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
